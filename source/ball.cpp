@@ -11,110 +11,142 @@ BALL::BALL(double x, double y, double theta, double r, double v)
 	velocity = v;
 }
 
-// 碰撞检测，将结果存储在BALL::p中
-collisionPoint BALL::collisionDetection(RECT rct)
+// 墙碰撞检测和反馈，强制弹出，有碰撞发生为true
+bool BALL::wallDetection()
 {
-	double dx, dy, dis;
-	p = {0, 0, 0, 0, false, true, 0};
+	if (x < radius)
+	{
+		x = radius;
+		vx = -vx;
+		return true;
+	}
+
+	if (x > WIDTH - radius)
+	{
+		x = WIDTH - radius;
+		vx = -vx;
+		return true;
+	}
+
+	if (y < radius)
+	{
+		y = radius;
+		vy = -vy;
+		return true;
+	}
+
+	if (y > HEIGHT - radius)
+	{
+		y = HEIGHT - radius;
+		vy = -vy;
+		return true;
+	}
+
+	return false;
+}
+
+// 碰撞检测，将结果存储在BALL::info中
+void BALL::collisionDetection(polygonNode* polygon)
+{
+	double disX = x - polygon -> xc,
+		   disY = y - polygon -> yc;
+
+	info.isCollision = false;
 	
-	// 计算圆心到矩形内某点最小距离dis
-	// 如果圆心xy某个坐标介于边端点之间则不可能为顶点碰撞
-	if (x >= rct.left && x <= rct.right)
-	{
-		dx = 0;
-		p.isVertex = false;
-		p.collisionSide = (y > rct.top) ? 2 : 4;
-	}
-	else if (x < rct.left)
-	{
-		dx = rct.left - x;
-		p.xCollisionPoint = rct.left;
-	}
-	else
-	{
-		dx = x - rct.right;
-		p.xCollisionPoint = rct.right;
-	}
-	if (y >= rct.bottom && y <= rct.top)
-	{
-		dy = 0;
-		p.isVertex = false;
-		p.collisionSide = (x > rct.right) ? 3 : 1;
-	}
-	else if (y < rct.bottom)
-	{
-		dy = rct.bottom - y;
-		p.yCollisionPoint = rct.bottom;
-	}
-	else
-	{
-		dy = y - rct.top;
-		p.yCollisionPoint = rct.top;
-	}
-	dis = sqrt(dx * dx + dy * dy);
+	// 如果与外接圆不碰撞则不可能和正多边形碰
+	if (disX * disX + disY * disY > (radius + polygon -> radius) * (radius + polygon -> radius)) return;
 	
-	// 不发生碰撞
-	if (dis > radius) return p;
-	
-	// 碰撞
-	p.isCollision = true;
-	double k;
-	
-	// 顶点碰撞的情况
-	if (p.isVertex)
+	// 检测球与哪一条边/哪一个顶点碰撞
+	// 将多边形拆分为多条线段
+	for (int i = 0; i < polygon -> edgeNum; i++)
 	{
-		double a, b, c, delta;
+		POINT A = polygon -> pt[i], B = polygon -> pt[(i + 1) % polygon -> edgeNum];
 		
-		// 求解修正量k: x -> x - k * vx   y -> y - k * vy   （k>0）
-		// 方程：(x-k*vx-xcollisionpoint)^2+(y-k*vy-ycollisionpoint)^2=r^2
-		dx = p.xCollisionPoint - x;
-		dy = p.yCollisionPoint - y;
-		a = velocity * velocity;
-		b = 2 * (vx * dx + vy * dy);
-		c = dx * dx + dy * dy - radius * radius;
-		delta = b * b - 4 * a * c;
-		k = (- b + sqrt(delta)) / (2 * a);
+		// A->B单位向量t，顺时针转90后n
+		double tx = B.x - A.x,
+			   ty = B.y - A.y;
+		double t = sqrt(tx * tx + ty * ty);
+		tx /= t, ty /= t;
+		double nx = ty, ny = -tx;
+
+		// 圆心到直线距离
+		double rAx = x - A.x, rAy = y - A.y;
+		double l = nx * rAx + ny * rAy;
 		
-		p.x = x - k * vx;
-		p.y = y - k * vy;
+		if (0 < l && l < radius)
+		{
+			// 圆心在AB方向投影与A的距离
+			double s = tx * rAx + ty * rAy;
+			
+			// 如果发生碰撞，分边和两个端点三种情况
+			// 边碰
+			if (0 < s && s < t)
+			{
+				// 如果是从内侧碰撞则直接跳过（防止穿墙后反复在内部碰撞）
+				double vn = vx * nx + vy * ny;
+				if (vn > 0) continue;
 
-		return p;
+				info.isCollision = true;
+				info.tErr = -l / vn;
+				info.nx = -nx;
+				info.ny = -ny;
+
+				return;
+			}
+
+			// A点碰
+			double rA2 = rAx * rAx + rAy * rAy;
+			if (rA2 < radius * radius)
+			{
+				if (vx * nx + vy * ny > 0) continue;
+
+				info.isCollision = true;
+				
+				// 求解修正量tErr: x -> x - tErr * vx   y -> y - tErr * vy   （tErr>0）
+				// 方程：(x-tErr*vx-xA)^2+(y-tErr*vy-yA)^2=r^2
+				double a = velocity * velocity;
+				double b = -2 * (vx * rAx + vy * rAy);
+				double c = rA2 - radius * radius;
+				double delta = b * b - 4 * a * c;
+				info.tErr = (-b + sqrt(delta)) / (2 * a);
+
+				double rA = sqrt(rA2);
+				info.nx = -rAx / rA;
+				info.ny = -rAy / rA;
+
+				return;
+			}
+
+			// B点碰
+			double rBx = x - B.x, rBy = y - B.y;
+			double rB2 = rBx * rBx + rBy * rBy;
+			if (rB2 < radius * radius)
+			{
+				if (vx * nx + vy * ny > 0) continue;
+
+				info.isCollision = true;
+
+				double a = velocity * velocity;
+				double b = -2 * (vx * rBx + vy * rBy);
+				double c = rB2 - radius * radius;
+				double delta = b * b - 4 * a * c;
+				info.tErr = (-b + sqrt(delta)) / (2 * a);
+
+				double rB = sqrt(rB2);
+				info.nx = -rBx / rB;
+				info.ny = -rBy / rB;
+
+				return;
+			}
+		}
 	}
-	
-	// 与边碰撞的情况
-	switch (p.collisionSide)
-	{
-		case 1:
-			k = (x - rct.left + radius) / vx;
-			p.x = rct.left - radius;
-			p.y = y - k * vy;
-			break;
-		case 3:
-			k = (x - rct.right - radius) / vx;
-			p.x = rct.right + radius;
-			p.y = y - k * vy;
-			break;
-		case 2:
-			k = (y - rct.top - radius) / vy;
-			p.x = x - k * vx;
-			p.y = rct.top + radius;
-			break;
-		case 4:
-			k = (y - rct.bottom + radius) / vy;
-			p.x = x - k * vx;
-			p.y = rct.bottom - radius;
-			break;
-
-	}
-
-	return p;
 }
 
 // 更新小球位置速度参数
 void BALL::ballUpdate()
 {
 	// 未发生碰撞
-	if (!p.isCollision)
+	if (!info.isCollision)
 	{
 		//更新坐标
 		x += vx * DELTA_T;
@@ -128,34 +160,21 @@ void BALL::ballUpdate()
 		return;
 	}
 	
-	// 发生碰撞，先更新碰撞时的位置
-	x = p.x;
-	y = p.y;
+	// 发生碰撞，先回溯到碰撞时的位置
+	x -= vx * info.tErr;
+	y -= vy * info.tErr;
 	
-	// 顶点碰撞
-	if (p.isVertex)
-	{
-		// 切点到圆心单位向量n
-		double nx = p.x - p.xCollisionPoint,
-		       ny = p.y - p.yCollisionPoint;
-		double n = sqrt(nx * nx + ny * ny);
-		nx /= n;
-		ny /= n;
-		
-		// 更新速度
-		double vParallel = vx * nx + vy * ny;
-		vx -= 2 * vParallel * nx;
-		vy -= 2 * vParallel * ny;
-		
-		// 微调，保持速度模长仍然为velocity
-		double k = velocity / sqrt(vx * vx + vy * vy);
-		vx *= k;
-		vy *= k;
-		
-		return;
-	}
+	// 更新速度
+	double vParallel = vx * info.nx + vy * info.ny;
+	vx -= 2 * vParallel * info.nx;
+	vy -= 2 * vParallel * info.ny;
 	
-	// 非顶点碰撞
-	if (p.collisionSide == 1 || p.collisionSide == 3) vx = -vx;
-	else vy = -vy;
+	// 微调，保持速度模长仍然为velocity
+	double k = velocity / sqrt(vx * vx + vy * vy);
+	vx *= k;
+	vy *= k;
+
+	// 碰撞信息复位
+	info.isCollision = false;
 }
+

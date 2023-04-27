@@ -3,6 +3,6 @@
 
 #include "geoelement.h"
 
-void render(rectSet* p_rctSet, BALL* p_ball, bool isCollision);  // 渲染
+void render(polygonSet* p_polygonSet, BALL* p_ball, bool isCollision);  // 渲染
 
 #endif

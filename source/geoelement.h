@@ -1,17 +1,21 @@
 #ifndef _FILE_GEOELEMENT_
 #define _FILE_GEOELEMENT_
 
+#include <graphics.h>
+#include <math.h>
+#include <tchar.h>
+
+#define MAX(a, b) ((a) < (b) ? (b) : (a))
+
+#define MAX_EDGE 10
+
 // 小球参数
 #define RADIUS 10.0
 #define VELOCITY 2.0
 //#define GRAVITY 0.05
 
 // 小球模拟每帧的增量时间
-#define DELTA_T 0.5
-
-#include <graphics.h>
-#include <math.h>
-#include <tchar.h>
+#define DELTA_T 2.0
 
 #define PI 3.1415926536
 //#define DOUBLE_MAX 0x7f7f7f7f7f7f7f7f
@@ -21,14 +25,26 @@
 #define HEIGHT 480
 
 // 碰撞点信息
-struct collisionPoint
+struct collisionInfo
 {
-	double x, y;              // 相切时圆心坐标
-	double xCollisionPoint,   // 顶点碰撞时碰撞点的坐标
-		   yCollisionPoint;
-	bool isCollision;         // 是否发生碰撞
-	bool isVertex;            // 是否为顶点碰撞
-	int collisionSide;        // 非顶点碰撞时1234分别对应左上右下
+	bool isCollision;  // 当前帧是否存在碰撞
+	double nx, ny;     // 顶点碰撞时碰撞点处的法向量（从圆心向外）
+	double tErr;       // 改变速度前先让坐标回溯到tErr之前
+};
+
+// 单个（正）多边形
+struct polygonNode
+{
+	POINT pt[MAX_EDGE - 1];  // 顶点，逆时针顺序排列
+	int edgeNum;             // 边数
+	long xc, yc;             // 中心，用于粗略估计是否碰撞
+	long radius;             // 外接球半径，用于粗略估计是否碰撞
+
+	int HP;                  // 单个方块剩余血量
+
+	// 双向链表
+	polygonNode *pre;
+	polygonNode *next;
 };
 
 // 小球类
@@ -37,56 +53,47 @@ class BALL
 public:
 	double radius;
 	double x, y;
+	collisionInfo info;   // 小球碰撞点信息
 
 private:
 	double velocity;
 	double vx, vy;
-	collisionPoint p;  // 小球碰撞点信息
 	//double energy;   // 一个常量值，初始化后不再变化
 
 public:
 	// 构造函数，初始化位置速度半径
 	BALL(double x, double y, double theta, double r, double v);
 
-	// 碰撞检测相关
-	collisionPoint collisionDetection(RECT rct);
+	// 墙碰撞检测和反馈，强制弹出，有碰撞发生为true
+	bool wallDetection();
+
+	// 多边形碰撞检测
+	void collisionDetection(polygonNode* polygon);
 
 	// 更新小球位置和速度
 	void ballUpdate();
 };
 
-// 单个矩形
-struct rectNode
-{
-	RECT rct;   // 几何参数
-
-	int HP;     // 单个方块剩余血量
-
-	// 双向链表
-	rectNode *pre;
-	rectNode *next;
-};
-
 // 所有矩形集合
-class rectSet
+class polygonSet
 {
 private:
-	rectNode head, tail;  // 头尾，空结构体
-	rectNode *it;         // 指向当前节点
+	polygonNode head, tail;  // 头尾，空结构体
+	polygonNode *it;         // 指向当前节点
 
 public:
-	rectSet();
+	polygonSet();
 
 	// 操作
-	void insert(RECT rct, int HP);  // 在it后面插入节点，插入后it指向新节点
-	void remove();                  // 移除it节点，移除后it指向后面节点
+	void insert(polygonNode p);  // 在it后面插入节点，插入后it指向新节点
+	void remove();               // 移除it节点，移除后it指向后面节点
 
 	// 访问
-	rectNode* present();            // 返回it指针
-	bool next();                    // 移动it，如果是tail返回false
-	bool pre();                     // 移动it，如果是head返回false
-	void first();                   // 返回head指针
-	void last();                    // 返回tail指针
+	polygonNode* present();      // 返回it指针
+	bool next();                 // 移动it，如果是tail返回false
+	bool pre();                  // 移动it，如果是head返回false
+	void first();                // 移动到head
+	void last();                 // 移动到tail
 };
 
 #endif

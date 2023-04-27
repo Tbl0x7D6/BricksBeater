@@ -2,26 +2,23 @@
 
 //extern int frameRate;
 // 渲染
-void render(rectSet* p_rctSet, BALL* p_ball, bool isCollision)
+void render(polygonSet* p_polygonSet, BALL* p_ball, bool isCollision)
 {
 	setfillcolor(WHITE);
 
-	// 矩形绘制
-	p_rctSet -> first();
-	while(p_rctSet -> next())
+	// 多边形绘制
+	p_polygonSet -> first();
+	while(p_polygonSet -> next())
 	{
-		rectNode* node = p_rctSet -> present();
+		polygonNode* node = p_polygonSet -> present();
 
-		solidrectangle(node -> rct.left, node -> rct.top, node -> rct.right, node -> rct.bottom);
+		solidpolygon(node -> pt, node -> edgeNum);
 
-		if (node -> HP >= 0)  // 边框不显示HP
-		{
-			TCHAR s_HP[10];
-			_itoa(node -> HP, (char*)s_HP, 10);
+		TCHAR s_HP[10];
+		_itoa(node -> HP, (char*)s_HP, 10);
+		RECT rct = {node -> xc - 100, node -> yc + 100, node -> xc + 100, node -> yc - 100};
 
-			drawtext(s_HP, &(node -> rct), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-		}
-		else node -> HP = -1;
+		drawtext(s_HP, &rct, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 	}
 	
 	if (isCollision) setfillcolor(GREEN);

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <conio.h>
 #include <time.h>
+#include <unistd.h>
 #include "geoelement.h"
 #include "render.h"
 
@@ -9,53 +10,60 @@ int frameRate = 120;
 
 int main()
 {
+	scanf("%d", &frameRate);
+	
 	srand((unsigned)time(NULL));
 	initgraph(WIDTH, HEIGHT);
 	BeginBatchDraw();
 
-	rectSet rct;
-	// 边框
-	rct.insert({LONG_MIN, -1, LONG_MAX, LONG_MIN}, -1);
-	rct.insert({LONG_MIN, LONG_MAX, -1, LONG_MIN}, -1);
-	rct.insert({LONG_MIN, LONG_MAX, LONG_MAX, HEIGHT + 1}, -1);
-	rct.insert({WIDTH + 1, LONG_MAX, LONG_MAX, LONG_MIN}, -1);
-
-	rct.insert({200, 300, 300, 200}, 10);
-	rct.insert({420, 400, 450, 350}, 10);
-	rct.insert({350, 150, 420, 100}, 10);
-
 	double theta;
-	//theta = PI / 180 * (rand() % 360);
-	theta = PI / 4;
+	theta = PI / 180 * (rand() % 360);
 	BALL ball(50, 50, theta, RADIUS, VELOCITY);
 	//ball.energy = (ball.vx * ball.vx + ball.vy * ball.vy) / 2 - GRAVITY * ball.y;
-	
+
+	polygonSet polygon;
+	polygonNode node;
+
+	node.edgeNum = 5;
+	node.HP = 3;
+	node.xc = 320, node.yc = 240;
+	node.radius = 120;
+	theta = PI / 180 * (rand() % 360);
+	for (int i = 0; i < node.edgeNum; i++)
+	{
+		node.pt[i].x = node.xc + node.radius * cos(theta);
+		node.pt[i].y = node.yc + node.radius * sin(theta);
+
+		theta += 2 * PI / node.edgeNum;
+	}
+	polygon.insert(node);
+
 	while (true)
 	{
 		int startTime = clock();
 		
 		cleardevice();
 		
-		bool isCollision = false;
+		bool isCollision = ball.wallDetection();
 		
-		rct.first();
-		while(rct.next())
+		polygon.first();
+		while (!isCollision && polygon.next())
 		{
-			if (!isCollision && ball.collisionDetection(rct.present() -> rct).isCollision)
+			ball.collisionDetection(polygon.present());
+			if (ball.info.isCollision)
 			{
 				isCollision = true;
-				if (rct.present() -> HP-- == 0) rct.remove();
-				break;
+				if (polygon.present() -> HP-- == 1) polygon.remove();
 			}
 		}
 		ball.ballUpdate();
 
-		render(&rct, &ball, isCollision);
+		render(&polygon, &ball, isCollision);
 		
 		int endTime = clock();
-		int frameTime = 1000 / frameRate;
-		int deltaTime = 1000 * (endTime - startTime) / CLOCKS_PER_SEC;
-		if (deltaTime < frameTime) Sleep(frameTime - deltaTime);
+		int frameTime = 1000000 / frameRate;
+		int deltaTime = 1000000 * (endTime - startTime) / CLOCKS_PER_SEC;
+		if (deltaTime < frameTime) usleep(frameTime - deltaTime);
 		
 		FlushBatchDraw();
 	}
