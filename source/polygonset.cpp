@@ -1,5 +1,6 @@
 #include "geoelement.h"
 
+// 构造函数，链表初始化
 polygonSet::polygonSet()
 {
     head.pre = NULL;
