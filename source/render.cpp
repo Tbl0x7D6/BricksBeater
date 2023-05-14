@@ -1,8 +1,7 @@
 #include "render.h"
 
-//extern int frameRate;
 // 渲染
-void render(polygonSet* p_polygonSet, BALL* p_ball, bool isCollision)
+void render(polygonSet* p_polygonSet, BALL* p_ballSet, int numOfBall)
 {
 	setfillcolor(WHITE);
 
@@ -14,6 +13,7 @@ void render(polygonSet* p_polygonSet, BALL* p_ball, bool isCollision)
 
 		solidpolygon(node -> pt, node -> edgeNum);
 
+		// 多边形剩余HP显示
 		TCHAR s_HP[10];
 		_itoa(node -> HP, (char*)s_HP, 10);
 		RECT rct = {node -> xc - 100, node -> yc + 100, node -> xc + 100, node -> yc - 100};
@@ -21,10 +21,11 @@ void render(polygonSet* p_polygonSet, BALL* p_ball, bool isCollision)
 		drawtext(s_HP, &rct, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 	}
 	
-	if (isCollision) setfillcolor(GREEN);
-    else setfillcolor(YELLOW);
-	
-	solidcircle((int)p_ball -> x, (int)p_ball -> y, (int)p_ball -> radius);
+	// 球绘制
+	for (int i = 0; i < numOfBall; i++)
+		solidcircle((int)(p_ballSet + i) -> x,
+					(int)(p_ballSet + i) -> y,
+					(int)(p_ballSet + i) -> radius);
 	
 	/*
 	RECT r = {0, 0, 40, 40};

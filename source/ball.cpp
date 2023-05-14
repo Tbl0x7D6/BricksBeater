@@ -1,5 +1,8 @@
 #include "geoelement.h"
 
+// 默认构造函数
+BALL::BALL() {}
+
 // BALL构造函数，初始化位置速度半径
 BALL::BALL(double x, double y, double theta, double r, double v)
 {
@@ -60,17 +63,18 @@ void BALL::collisionDetection(polygonNode* polygon)
 	// 将多边形拆分为多条线段
 	for (int i = 0; i < polygon -> edgeNum; i++)
 	{
-		POINT A = polygon -> pt[i], B = polygon -> pt[(i + 1) % polygon -> edgeNum];
+		POINT *A = polygon -> pt + i,
+			  *B = polygon -> pt + (i + 1) % polygon -> edgeNum;
 		
 		// A->B单位向量t，顺时针转90后n
-		double tx = B.x - A.x,
-			   ty = B.y - A.y;
+		double tx = B -> x - A -> x,
+			   ty = B -> y - A -> y;
 		double t = sqrt(tx * tx + ty * ty);
 		tx /= t, ty /= t;
 		double nx = ty, ny = -tx;
 
 		// 圆心到直线距离
-		double rAx = x - A.x, rAy = y - A.y;
+		double rAx = x - A -> x, rAy = y - A -> y;
 		double l = nx * rAx + ny * rAy;
 		
 		if (0 < l && l < radius)
@@ -87,7 +91,7 @@ void BALL::collisionDetection(polygonNode* polygon)
 				if (vn > 0) continue;
 
 				info.isCollision = true;
-				info.tErr = -l / vn;
+				info.tErr = (l - radius) / vn;
 				info.nx = -nx;
 				info.ny = -ny;
 
@@ -98,8 +102,6 @@ void BALL::collisionDetection(polygonNode* polygon)
 			double rA2 = rAx * rAx + rAy * rAy;
 			if (rA2 < radius * radius)
 			{
-				if (vx * nx + vy * ny > 0) continue;
-
 				info.isCollision = true;
 				
 				// 求解修正量tErr: x -> x - tErr * vx   y -> y - tErr * vy   （tErr>0）
@@ -110,20 +112,17 @@ void BALL::collisionDetection(polygonNode* polygon)
 				double delta = b * b - 4 * a * c;
 				info.tErr = (-b + sqrt(delta)) / (2 * a);
 
-				double rA = sqrt(rA2);
-				info.nx = -rAx / rA;
-				info.ny = -rAy / rA;
+				info.nx = -(rAx - info.tErr * vx) / radius;
+				info.ny = -(rAy - info.tErr * vy) / radius;
 
 				return;
 			}
 
 			// B点碰
-			double rBx = x - B.x, rBy = y - B.y;
+			double rBx = x - B -> x, rBy = y - B -> y;
 			double rB2 = rBx * rBx + rBy * rBy;
 			if (rB2 < radius * radius)
 			{
-				if (vx * nx + vy * ny > 0) continue;
-
 				info.isCollision = true;
 
 				double a = velocity * velocity;
@@ -132,9 +131,8 @@ void BALL::collisionDetection(polygonNode* polygon)
 				double delta = b * b - 4 * a * c;
 				info.tErr = (-b + sqrt(delta)) / (2 * a);
 
-				double rB = sqrt(rB2);
-				info.nx = -rBx / rB;
-				info.ny = -rBy / rB;
+				info.nx = -(rBx - info.tErr * vx) / radius;
+				info.ny = -(rBy - info.tErr * vy) / radius;
 
 				return;
 			}
@@ -173,6 +171,10 @@ void BALL::ballUpdate()
 	double k = velocity / sqrt(vx * vx + vy * vy);
 	vx *= k;
 	vy *= k;
+
+	//更新坐标
+	x += vx * DELTA_T;
+	y += vy * DELTA_T;
 
 	// 碰撞信息复位
 	info.isCollision = false;

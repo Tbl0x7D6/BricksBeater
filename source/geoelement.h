@@ -5,19 +5,18 @@
 #include <math.h>
 #include <tchar.h>
 
-#define MAX(a, b) ((a) < (b) ? (b) : (a))
-
 #define MAX_EDGE 10
 
 // 小球参数
-#define RADIUS 10.0
-#define VELOCITY 2.0
+#define RADIUS 6.0
+#define VELOCITY 1.0
 //#define GRAVITY 0.05
 
 // 小球模拟每帧的增量时间
-#define DELTA_T 2.0
+#define DELTA_T 5.0
 
 #define PI 3.1415926536
+
 //#define DOUBLE_MAX 0x7f7f7f7f7f7f7f7f
 
 // 画布参数
@@ -61,6 +60,9 @@ private:
 	//double energy;   // 一个常量值，初始化后不再变化
 
 public:
+	// 默认构造函数
+	BALL();
+
 	// 构造函数，初始化位置速度半径
 	BALL(double x, double y, double theta, double r, double v);
 
