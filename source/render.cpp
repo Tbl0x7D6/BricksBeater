@@ -23,9 +23,10 @@ void render(polygonSet* p_polygonSet, BALL* p_ballSet, int numOfBall)
 	
 	// 球绘制
 	for (int i = 0; i < numOfBall; i++)
-		solidcircle((int)(p_ballSet + i) -> x,
-					(int)(p_ballSet + i) -> y,
-					(int)(p_ballSet + i) -> radius);
+		if (!(p_ballSet + i) -> info.removeFlag)
+			solidcircle((p_ballSet + i) -> x,
+						(p_ballSet + i) -> y,
+						(p_ballSet + i) -> radius);
 	
 	/*
 	RECT r = {0, 0, 40, 40};

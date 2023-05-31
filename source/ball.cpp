@@ -12,6 +12,8 @@ BALL::BALL(double x, double y, double theta, double r, double v)
 	vy = v * sin(theta);
 	radius = r;
 	velocity = v;
+	info.isCollision = false;
+	info.removeFlag = false;
 }
 
 // 墙碰撞检测和反馈，强制弹出，有碰撞发生为true
@@ -40,16 +42,15 @@ bool BALL::wallDetection()
 
 	if (y > HEIGHT - radius)
 	{
-		y = HEIGHT - radius;
-		vy = -vy;
+		info.removeFlag = true;
 		return true;
 	}
 
 	return false;
 }
 
-// 碰撞检测，将结果存储在BALL::info中
-void BALL::collisionDetection(polygonNode* polygon)
+// 多边形碰撞检测，将结果存储在BALL::info中
+void BALL::collisionDetection(polygonNode *polygon)
 {
 	double disX = x - polygon -> xc,
 		   disY = y - polygon -> yc;
@@ -57,7 +58,8 @@ void BALL::collisionDetection(polygonNode* polygon)
 	info.isCollision = false;
 	
 	// 如果与外接圆不碰撞则不可能和正多边形碰
-	if (disX * disX + disY * disY > (radius + polygon -> radius) * (radius + polygon -> radius)) return;
+	if (disX * disX + disY * disY > (radius + polygon -> radius) * (radius + polygon -> radius))
+		return;
 	
 	// 检测球与哪一条边/哪一个顶点碰撞
 	// 将多边形拆分为多条线段
@@ -146,7 +148,7 @@ void BALL::ballUpdate()
 	// 未发生碰撞
 	if (!info.isCollision)
 	{
-		//更新坐标
+		// 更新坐标
 		x += vx * DELTA_T;
 		y += vy * DELTA_T;
 		
@@ -172,7 +174,7 @@ void BALL::ballUpdate()
 	vx *= k;
 	vy *= k;
 
-	//更新坐标
+	// 更新坐标
 	x += vx * DELTA_T;
 	y += vy * DELTA_T;
 

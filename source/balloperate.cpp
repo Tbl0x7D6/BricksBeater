@@ -3,6 +3,8 @@
 // 对单个球进行模拟
 void ballOperate(BALL *ball, polygonSet *polygon)
 {
+    if (ball -> info.removeFlag) return;
+
     bool isCollision = ball -> wallDetection();
 	polygon -> first();
 
@@ -15,7 +17,7 @@ void ballOperate(BALL *ball, polygonSet *polygon)
 		if (ball -> info.isCollision)
         {
             isCollision = true;
-            if (present -> HP-- == 0) polygon -> remove();
+            if (present -> HP-- == 1) polygon -> remove();
         }
     }
 

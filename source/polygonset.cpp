@@ -10,6 +10,13 @@ polygonSet::polygonSet()
     it = &head;
 }
 
+// 析构函数，释放所有节点
+polygonSet::~polygonSet()
+{
+    first();
+    while (next()) remove();
+}
+
 // 在it后面插入节点，插入后it指向新节点
 void polygonSet::insert(polygonNode p)
 {

@@ -5,27 +5,30 @@
 #include <math.h>
 #include <tchar.h>
 
+// 帧率
+#define FRAMERATE 1000
+
+// 多边形边数量最大值
 #define MAX_EDGE 10
 
 // 小球参数
-#define RADIUS 6.0
+#define RADIUS 5.0
 #define VELOCITY 1.0
 //#define GRAVITY 0.05
 
 // 小球模拟每帧的增量时间
-#define DELTA_T 5.0
+#define DELTA_T 4.0
 
 #define PI 3.1415926536
 
-//#define DOUBLE_MAX 0x7f7f7f7f7f7f7f7f
-
 // 画布参数
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 480
+#define HEIGHT 800
 
 // 碰撞点信息
 struct collisionInfo
 {
+	bool removeFlag;   // 小球是否触底需要移除
 	bool isCollision;  // 当前帧是否存在碰撞
 	double nx, ny;     // 顶点碰撞时碰撞点处的法向量（从圆心向外）
 	double tErr;       // 改变速度前先让坐标回溯到tErr之前
@@ -69,7 +72,7 @@ public:
 	// 墙碰撞检测和反馈，强制弹出，有碰撞发生为true
 	bool wallDetection();
 
-	// 多边形碰撞检测
+	// 多边形碰撞检测，将结果存储在BALL::info中
 	void collisionDetection(polygonNode* polygon);
 
 	// 更新小球位置和速度
@@ -85,6 +88,7 @@ private:
 
 public:
 	polygonSet();
+	~polygonSet();
 
 	// 操作
 	void insert(polygonNode p);  // 在it后面插入节点，插入后it指向新节点
