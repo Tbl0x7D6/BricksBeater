@@ -18,9 +18,9 @@ polygonSet::~polygonSet()
 }
 
 // 在it后面插入节点，插入后it指向新节点
-void polygonSet::insert(polygonNode p)
+void polygonSet::insert(struct polygonNode p)
 {
-    polygonNode* tmp = new polygonNode;
+    struct polygonNode* tmp = new struct polygonNode;
     *tmp = p;
     it -> next -> pre = tmp;
     tmp -> next = it -> next;
@@ -32,7 +32,7 @@ void polygonSet::insert(polygonNode p)
 // 移除it节点，移除后it指向后面节点
 void polygonSet::remove()
 {
-    polygonNode* tmp = it -> next;
+    struct polygonNode* tmp = it -> next;
     it -> pre -> next = it -> next;
     it -> next -> pre = it -> pre;
     delete it;

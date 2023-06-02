@@ -50,7 +50,7 @@ bool BALL::wallDetection()
 }
 
 // 多边形碰撞检测，将结果存储在BALL::info中
-void BALL::collisionDetection(polygonNode *polygon)
+void BALL::collisionDetection(struct polygonNode *polygon)
 {
 	double disX = x - polygon -> xc,
 		   disY = y - polygon -> yc;

@@ -31,7 +31,7 @@ void render(polygonSet* p_polygonSet, BALL* p_ballSet, int numOfBall)
 	/*
 	RECT r = {0, 0, 40, 40};
 	TCHAR str[10];
-	_itoa(frameRate, (char*)str, 10);
+	_itoa(FRAMERATE, (char*)str, 10);
     drawtext(str, &r, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 	*/
 }

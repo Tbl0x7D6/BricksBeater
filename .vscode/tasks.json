@@ -9,7 +9,9 @@
                 "${fileDirname}\\*.cpp",
                 "-o",
                 "${fileDirname}\\..\\bin\\BricksBeater.exe",
-                "-leasyx"
+                "-leasyx",
+                "-lwinmm",
+                "-lws2_32"
             ],
             "options": {
                 "cwd": "${fileDirname}"

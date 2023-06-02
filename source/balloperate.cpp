@@ -11,7 +11,7 @@ void ballOperate(BALL *ball, polygonSet *polygon)
     // 逐个与多边形检查碰撞
 	while (!isCollision && polygon -> next())
 	{
-        polygonNode *present = polygon -> present();
+        struct polygonNode *present = polygon -> present();
 
 		ball -> collisionDetection(present);
 		if (ball -> info.isCollision)

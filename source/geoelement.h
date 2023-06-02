@@ -6,7 +6,7 @@
 #include <tchar.h>
 
 // 帧率
-#define FRAMERATE 1000
+#define FRAMERATE 500
 
 // 多边形边数量最大值
 #define MAX_EDGE 10
@@ -24,6 +24,8 @@
 // 画布参数
 #define WIDTH 480
 #define HEIGHT 800
+#define COLUMN 12
+#define ROW 20
 
 // 碰撞点信息
 struct collisionInfo
@@ -45,8 +47,8 @@ struct polygonNode
 	int HP;                  // 单个方块剩余血量
 
 	// 双向链表
-	polygonNode *pre;
-	polygonNode *next;
+	struct polygonNode *pre;
+	struct polygonNode *next;
 };
 
 // 小球类
@@ -55,7 +57,7 @@ class BALL
 public:
 	double radius;
 	double x, y;
-	collisionInfo info;   // 小球碰撞点信息
+	struct collisionInfo info;   // 小球碰撞点信息
 
 private:
 	double velocity;
@@ -73,7 +75,7 @@ public:
 	bool wallDetection();
 
 	// 多边形碰撞检测，将结果存储在BALL::info中
-	void collisionDetection(polygonNode* polygon);
+	void collisionDetection(struct polygonNode* polygon);
 
 	// 更新小球位置和速度
 	void ballUpdate();
@@ -83,23 +85,23 @@ public:
 class polygonSet
 {
 private:
-	polygonNode head, tail;  // 头尾，空结构体
-	polygonNode *it;         // 指向当前节点
+	struct polygonNode head, tail;  // 头尾，空结构体
+	struct polygonNode *it;         // 指向当前节点
 
 public:
 	polygonSet();
 	~polygonSet();
 
 	// 操作
-	void insert(polygonNode p);  // 在it后面插入节点，插入后it指向新节点
-	void remove();               // 移除it节点，移除后it指向后面节点
+	void insert(struct polygonNode p);  // 在it后面插入节点，插入后it指向新节点
+	void remove();                      // 移除it节点，移除后it指向后面节点
 
 	// 访问
-	polygonNode* present();      // 返回it指针
-	bool next();                 // 移动it，如果是tail返回false
-	bool pre();                  // 移动it，如果是head返回false
-	void first();                // 移动到head
-	void last();                 // 移动到tail
+	struct polygonNode* present();      // 返回it指针
+	bool next();                        // 移动it，如果是tail返回false
+	bool pre();                         // 移动it，如果是head返回false
+	void first();                       // 移动到head
+	void last();                        // 移动到tail
 };
 
 #endif

@@ -22,12 +22,30 @@ polygonNode polygonGenerator(int xc, int yc, int edgeNum, int radius, int HP, do
 	return node;
 }
 
+// 在最上面一行以概率p填充多边形
+void rowGenerator(polygonSet *polygon, double p, int HP)
+{
+	int radius = WIDTH / COLUMN;
+	polygon -> first();
+	for (int i = 0; i < radius; i++)
+	{
+		double r = double(rand() % 10000) / 10000;
+		if (r > p) continue;
+
+		int edgeNum = rand() % 5 + 3;
+		polygon -> insert(
+			polygonGenerator(radius * (2 * i + 1),
+							 radius * 3,
+							 edgeNum, 0.9 * radius, HP));
+	}
+}
+
 // 阻塞，获取小球发射角度
 double getReleaseAngle(polygonSet *polygon)
 {
     double theta;
 
-    ExMessage m;  // 消息变量
+    struct ExMessage m;  // 消息变量
     
     // 清空消息队列
     while (peekmessage(&m, EX_MOUSE));
@@ -75,9 +93,15 @@ void oneRound(double theta, int maxBallNum, polygonSet *polygon)
 
 	//ball.energy = (ball.vx * ball.vx + ball.vy * ball.vy) / 2 - GRAVITY * ball.y;
 
+	// 设置时钟精度为1ms
+	timeBeginPeriod(1);
+	LARGE_INTEGER startCount, endCount, F;
+	QueryPerformanceFrequency(&F);
+
 	while(true)
 	{
-		int startTime = clock();
+		// 开始计时
+		QueryPerformanceCounter(&startCount);
 		
 		cleardevice();
 
@@ -85,20 +109,13 @@ void oneRound(double theta, int maxBallNum, polygonSet *polygon)
 		if (frame % 4 == 0 && releasedBallNum < maxBallNum)
 			ball[releasedBallNum++] = BALL(WIDTH / 2.0, HEIGHT - RADIUS, theta, RADIUS, VELOCITY);
 
+		// 逐个对球进行模拟
 		for (int i = 0; i < releasedBallNum; i++)
 			ballOperate(ball + i, polygon);
 
 		render(polygon, ball, releasedBallNum);
-		
-		int endTime = clock();
-		int frameTime = 1000000 / FRAMERATE;
-		int deltaTime = 1000000 * (endTime - startTime) / CLOCKS_PER_SEC;
-		if (deltaTime < frameTime) usleep(frameTime - deltaTime);
-		
-		FlushBatchDraw();
-		frame++;
 
-        // 如果所有球都触底则结束这一回合
+		// 如果所有球都触底则结束这一回合
         bool flag = false;
         for (int i = 0; i < releasedBallNum; i++)
         {
@@ -109,7 +126,50 @@ void oneRound(double theta, int maxBallNum, polygonSet *polygon)
             }
         }
         if (!flag) break;
+
+		// 停止计时，计算这一帧用时并延时
+		QueryPerformanceCounter(&endCount);
+		long long elapse=(endCount.QuadPart-startCount.QuadPart)*1000000/F.QuadPart;
+		int frameTime = 1000000 / FRAMERATE;
+		while (elapse < frameTime)
+		{
+			Sleep(1);
+			QueryPerformanceCounter(&endCount);
+			elapse=(endCount.QuadPart-startCount.QuadPart)*1000000/F.QuadPart;
+		}
+
+		FlushBatchDraw();
+		frame++;
 	}
 
+	Sleep(500);
+
+	// 将所有的多边形整体下移一格
+	int radius = HEIGHT / ROW;
+	for (int i = 0; i < radius * 2; i++)
+	{
+		cleardevice();
+
+		polygon -> first();
+		while (polygon -> next())
+		{
+			struct polygonNode *present = polygon -> present();
+			present -> yc++;
+			for (int i = 0; i < present -> edgeNum; i++) present -> pt[i].y++;
+		}
+
+		render(polygon, ball, 0);
+		FlushBatchDraw();
+		Sleep(10);
+	}
+
+	Sleep(500);
+
+	// 判断是否有多边形超过设定底线
+
+	// 顶端生成新的多边形
+	rowGenerator(polygon, 0.5, 20);
+
+	timeEndPeriod(1);
 	delete ball;
 }
