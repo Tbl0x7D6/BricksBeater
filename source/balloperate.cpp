@@ -23,3 +23,4 @@ void ballOperate(BALL *ball, polygonSet *polygon)
 
 	ball -> ballUpdate();
 }
+

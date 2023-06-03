@@ -3,13 +3,12 @@
 
 #include <graphics.h>
 #include <math.h>
-#include <tchar.h>
 
 // 帧率
-#define FRAMERATE 500
+#define FRAMERATE 300
 
 // 多边形边数量最大值
-#define MAX_EDGE 10
+#define MAX_EDGE_NUM 10
 
 // 小球参数
 #define RADIUS 5.0
@@ -22,10 +21,22 @@
 #define PI 3.1415926536
 
 // 画布参数
-#define WIDTH 480
-#define HEIGHT 800
-#define COLUMN 12
-#define ROW 20
+#define WIDTH 420
+#define HEIGHT 720
+#define COLUMN 7
+#define ROW 12
+
+// 底线高度
+#define BOTTOMLINE 20
+
+// 每N帧发射一个球
+#define N 6
+
+// 填充率
+#define FILLRATE 0.7
+
+// 生成方块HP与球个数比值
+#define HPFACTOR 1.5
 
 // 碰撞点信息
 struct collisionInfo
@@ -39,12 +50,13 @@ struct collisionInfo
 // 单个（正）多边形
 struct polygonNode
 {
-	POINT pt[MAX_EDGE - 1];  // 顶点，逆时针顺序排列
-	int edgeNum;             // 边数
-	long xc, yc;             // 中心，用于粗略估计是否碰撞
-	long radius;             // 外接球半径，用于粗略估计是否碰撞
-
-	int HP;                  // 单个方块剩余血量
+	POINT pt[MAX_EDGE_NUM - 1];  // 顶点，逆时针顺序排列
+	int edgeNum;                 // 边数
+	long xc, yc;                 // 中心，用于粗略估计是否碰撞
+	long radius;                 // 外接球半径，用于粗略估计是否碰撞
+	
+	COLORREF color;              // 颜色
+	int HP;                      // 单个方块剩余血量
 
 	// 双向链表
 	struct polygonNode *pre;
@@ -95,6 +107,7 @@ public:
 	// 操作
 	void insert(struct polygonNode p);  // 在it后面插入节点，插入后it指向新节点
 	void remove();                      // 移除it节点，移除后it指向后面节点
+	void release();                     // 释放所有节点
 
 	// 访问
 	struct polygonNode* present();      // 返回it指针
@@ -105,3 +118,4 @@ public:
 };
 
 #endif
+

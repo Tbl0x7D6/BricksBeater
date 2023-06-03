@@ -3,14 +3,13 @@
 // 渲染
 void render(polygonSet* p_polygonSet, BALL* p_ballSet, int numOfBall)
 {
-	setfillcolor(WHITE);
-
 	// 多边形绘制
 	p_polygonSet -> first();
 	while(p_polygonSet -> next())
 	{
 		polygonNode* node = p_polygonSet -> present();
 
+		setfillcolor(node -> color);
 		solidpolygon(node -> pt, node -> edgeNum);
 
 		// 多边形剩余HP显示
@@ -22,6 +21,7 @@ void render(polygonSet* p_polygonSet, BALL* p_ballSet, int numOfBall)
 	}
 	
 	// 球绘制
+	setfillcolor(LIGHTCYAN);
 	for (int i = 0; i < numOfBall; i++)
 		if (!(p_ballSet + i) -> info.removeFlag)
 			solidcircle((p_ballSet + i) -> x,

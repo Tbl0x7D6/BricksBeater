@@ -4,6 +4,9 @@
 // 生成一个多边形
 polygonNode polygonGenerator(int xc, int yc, int edgeNum, int radius, int HP, double theta)
 {
+	// 不同边数对应的颜色
+	COLORREF colorMap[MAX_EDGE_NUM + 1] = {0, 0, 0, RED, GREEN, BLUE, YELLOW};
+
 	if (theta == 0) theta = PI / 180 * (rand() % 360);
 
 	polygonNode node;
@@ -11,6 +14,7 @@ polygonNode polygonGenerator(int xc, int yc, int edgeNum, int radius, int HP, do
 	node.HP = HP;
 	node.xc = xc, node.yc = yc;
 	node.radius = radius;
+	node.color = colorMap[edgeNum];
 
 	for (int i = 0; i < edgeNum; i++)
 	{
@@ -25,18 +29,18 @@ polygonNode polygonGenerator(int xc, int yc, int edgeNum, int radius, int HP, do
 // 在最上面一行以概率p填充多边形
 void rowGenerator(polygonSet *polygon, double p, int HP)
 {
-	int radius = WIDTH / COLUMN;
+	int radius = WIDTH / COLUMN / 2;
 	polygon -> first();
-	for (int i = 0; i < radius; i++)
+	for (int i = 0; i < COLUMN; i++)
 	{
 		double r = double(rand() % 10000) / 10000;
 		if (r > p) continue;
 
-		int edgeNum = rand() % 5 + 3;
+		int edgeNum = rand() % 4 + 3;
 		polygon -> insert(
 			polygonGenerator(radius * (2 * i + 1),
 							 radius * 3,
-							 edgeNum, 0.9 * radius, HP));
+							 edgeNum, radius, HP));
 	}
 }
 
@@ -83,6 +87,28 @@ double getReleaseAngle(polygonSet *polygon)
     return theta;
 }
 
+// 将所有的多边形整体下移一格
+void translate(polygonSet *polygon)
+{
+	int radius = HEIGHT / ROW / 2;
+	for (int i = 0; i < radius * 2; i++)
+	{
+		cleardevice();
+
+		polygon -> first();
+		while (polygon -> next())
+		{
+			struct polygonNode *present = polygon -> present();
+			present -> yc++;
+			for (int i = 0; i < present -> edgeNum; i++) present -> pt[i].y++;
+		}
+
+		render(polygon, NULL, 0);
+		FlushBatchDraw();
+		Sleep(6);
+	}
+}
+
 // 一回合
 void oneRound(double theta, int maxBallNum, polygonSet *polygon)
 {
@@ -105,8 +131,8 @@ void oneRound(double theta, int maxBallNum, polygonSet *polygon)
 		
 		cleardevice();
 
-		// 每4帧发射一个球
-		if (frame % 4 == 0 && releasedBallNum < maxBallNum)
+		// 每N帧发射一个球
+		if (frame % N == 0 && releasedBallNum < maxBallNum)
 			ball[releasedBallNum++] = BALL(WIDTH / 2.0, HEIGHT - RADIUS, theta, RADIUS, VELOCITY);
 
 		// 逐个对球进行模拟
@@ -129,13 +155,17 @@ void oneRound(double theta, int maxBallNum, polygonSet *polygon)
 
 		// 停止计时，计算这一帧用时并延时
 		QueryPerformanceCounter(&endCount);
-		long long elapse=(endCount.QuadPart-startCount.QuadPart)*1000000/F.QuadPart;
-		int frameTime = 1000000 / FRAMERATE;
-		while (elapse < frameTime)
+		
+		if (!KEY_DOWN(13))
 		{
-			Sleep(1);
-			QueryPerformanceCounter(&endCount);
-			elapse=(endCount.QuadPart-startCount.QuadPart)*1000000/F.QuadPart;
+			long long elapse = (endCount.QuadPart - startCount.QuadPart) * 1000000 / F.QuadPart;
+			int frameTime = 1000000 / FRAMERATE;
+			while (elapse < frameTime)
+			{
+				Sleep(1);
+				QueryPerformanceCounter(&endCount);
+				elapse = (endCount.QuadPart - startCount.QuadPart) * 1000000 / F.QuadPart;
+			}
 		}
 
 		FlushBatchDraw();
@@ -144,32 +174,32 @@ void oneRound(double theta, int maxBallNum, polygonSet *polygon)
 
 	Sleep(500);
 
-	// 将所有的多边形整体下移一格
-	int radius = HEIGHT / ROW;
-	for (int i = 0; i < radius * 2; i++)
-	{
-		cleardevice();
-
-		polygon -> first();
-		while (polygon -> next())
-		{
-			struct polygonNode *present = polygon -> present();
-			present -> yc++;
-			for (int i = 0; i < present -> edgeNum; i++) present -> pt[i].y++;
-		}
-
-		render(polygon, ball, 0);
-		FlushBatchDraw();
-		Sleep(10);
-	}
+	translate(polygon);
 
 	Sleep(500);
 
-	// 判断是否有多边形超过设定底线
-
 	// 顶端生成新的多边形
-	rowGenerator(polygon, 0.5, 20);
+	rowGenerator(polygon, FILLRATE, maxBallNum * HPFACTOR);
+	cleardevice();
+	render(polygon, ball, 0);
+	FlushBatchDraw();
 
 	timeEndPeriod(1);
 	delete ball;
 }
+
+// 判断游戏是否结束
+bool gameOver(polygonSet *polygon)
+{
+	polygon -> first();
+	while (polygon -> next())
+	{
+		struct polygonNode *present = polygon -> present();
+
+		for (int i = 0; i < present -> edgeNum; i++)
+			if (present -> pt[i].y >= HEIGHT - BOTTOMLINE)
+				return true;
+	}
+	return false;
+}
+
