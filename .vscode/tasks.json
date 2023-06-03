@@ -5,7 +5,7 @@
             "label": "C/C++: g++.exe 生成活动文件",
             "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
             "args": [
-                "-g",
+                "-static",
                 "${fileDirname}\\*.cpp",
                 "-o",
                 "${fileDirname}\\..\\bin\\BricksBeater.exe",
